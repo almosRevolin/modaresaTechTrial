@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { Button, Input, Modal } from "../index";
-import DatePicker, { registerLocale } from "react-datepicker";
+import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import Select from "../Select/Select";
+import { AgendaContextData } from "../../contexts/AgendaContext";
 
 const AppointmentModal = ({
   appointment,
@@ -13,10 +15,14 @@ const AppointmentModal = ({
 }: AppointmentModalProps) => {
   const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     saveAppointment();
+    onClose();
   };
 
-  const { title, start, duration } = appointment;
+  const { vendors, buyers } = useContext(AgendaContextData);
+
+  const { title, start, duration, vendorId, buyerId } = appointment;
 
   const handleDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
@@ -31,10 +37,44 @@ const AppointmentModal = ({
     onInputChange(fakeEventObj);
   };
 
-  const handleStartDateChange = (date: Date) => {
+  const vendorOptions = useMemo(() => {
+    return vendors.map(vendor => {
+      const { name, _id } = vendor;
+
+      return { name, value: _id };
+    });
+  }, []);
+
+  const buyerOptions = useMemo(() => {
+    return buyers.map(buyer => {
+      const { name, companyName, _id } = buyer;
+
+      return { name: `${name} - ${companyName}`, value: _id };
+    });
+  }, []);
+
+  const handleStartDateChange = (date: Date): void => {
     // @ts-ignore
     const fakeEventObj = {
       target: { value: date, name: "start" },
+    } as React.ChangeEvent<HTMLInputElement>;
+
+    onInputChange(fakeEventObj);
+  };
+
+  const handleVendorSelect = (vendorId: string) => {
+    // @ts-ignore
+    const fakeEventObj = {
+      target: { value: vendorId, name: "vendorId" },
+    } as React.ChangeEvent<HTMLInputElement>;
+
+    onInputChange(fakeEventObj);
+  };
+
+  const handleBuyerSelect = (buyerId: string) => {
+    // @ts-ignore
+    const fakeEventObj = {
+      target: { value: buyerId, name: "buyerId" },
     } as React.ChangeEvent<HTMLInputElement>;
 
     onInputChange(fakeEventObj);
@@ -48,7 +88,7 @@ const AppointmentModal = ({
           onSubmit={handleSave}
           className="flex flex-col w-8/12 h-full mx-auto my-8"
         >
-          <div className="flex flex-col my-2">
+          <div className="flex flex-col my-4">
             <label
               htmlFor="appointmentTitle"
               className="text-lg font-semibold text-black"
@@ -64,7 +104,7 @@ const AppointmentModal = ({
               placeholder="Enter appointment title"
             />
           </div>
-          <div className="flex flex-row justify-between items-center h-20 my-2">
+          <div className="flex flex-row justify-between items-center h-20 my-4">
             <div className="w-5/12">
               <label
                 htmlFor="appointmentStart"
@@ -103,17 +143,41 @@ const AppointmentModal = ({
               />
             </div>
           </div>
-          <div className="flex flex-row w-full">
-            <div className="w-5/2 h-full">
-              <label htmlFor="appointmentVendor">Vendor:</label>
-              <Input></Input>
+          <div className="flex flex-row w-full my-4 justify-between items-center">
+            <div className="w-5/12 h-full">
+              <label
+                className="text-lg font-semibold text-black"
+                htmlFor="appointmentVendor"
+              >
+                Vendor:
+              </label>
+              <Select
+                options={vendorOptions}
+                onSelect={handleVendorSelect}
+                selectedValue={vendorId}
+                placeholder="Please select a vendor"
+              />
+            </div>
+            <div className="w-5/12 h-full">
+              <label
+                className="text-lg font-semibold text-black"
+                htmlFor="appointmentBuyer"
+              >
+                Buyer:
+              </label>
+              <Select
+                options={buyerOptions}
+                onSelect={handleBuyerSelect}
+                selectedValue={buyerId}
+                placeholder="Please select a buyer"
+              />
             </div>
           </div>
+          <div className="flex justify-between mt-auto mx-auto w-8/12 h-12">
+            <Button onClick={onClose}>Cancel</Button>
+            <Button type="submit">Save</Button>
+          </div>
         </form>
-        <div className="flex justify-between mt-auto mx-auto w-8/12 h-12">
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit">Save</Button>
-        </div>
       </div>
     </Modal>
   );
