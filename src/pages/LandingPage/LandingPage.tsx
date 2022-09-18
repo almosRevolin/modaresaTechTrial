@@ -44,8 +44,13 @@ const LandingPage = () => {
   };
 
   const handleCreateAppointment = (appointment: AppointmentInputs): void => {
+    const newAppointment = { ...appointment };
+    const { start, duration } = newAppointment;
+
+    newAppointment.end = new Date(start.getTime() + duration);
+
     setAppointments(prevAppointments => {
-      return [...prevAppointments, appointment];
+      return [...prevAppointments, newAppointment];
     });
   };
 
