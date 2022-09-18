@@ -5,14 +5,7 @@ const CreateAppointment = ({
   campaign,
   createAppointment,
 }: CreateAppointmentProps) => {
-  const {
-    _id,
-    startDate,
-    endDate,
-    vendorId,
-    defaultAppointmentDuration,
-    title,
-  } = campaign;
+  const { _id, defaultAppointmentDuration, title } = campaign;
 
   const baseInputs = {
     title: "",
@@ -43,8 +36,6 @@ const CreateAppointment = ({
     setIsCreateModalOpen(false);
     setAppointment(baseInputs);
   };
-
-  console.log(isCreateModalOpen);
 
   return (
     <>
