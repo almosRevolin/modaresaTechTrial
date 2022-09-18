@@ -1,37 +1,75 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
-import { Button, Input, Modal } from "../index";
+import { Button, InputGroup, Modal } from "../index";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Select from "../Select/Select";
 import { AgendaContextData } from "../../contexts/AgendaContext";
 
+import AddNewBuyerInputs from "./AddNewBuyerInputs/AddNewBuyerInputs";
+import {
+  areAppointmentInputsComplete,
+  checkVendorAvailable,
+} from "../../utils/utils";
+
 const AppointmentModal = ({
   appointment,
-  campaignTitle,
+  appointments,
+  campaign,
   saveAppointment,
   onInputChange,
   isOpen,
   onClose,
+  addBuyer,
+  deleteAppointment,
 }: AppointmentModalProps) => {
-  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    saveAppointment();
-    onClose();
-  };
+  const {
+    title: campaignTitle,
+    startDate: campaignStartDate,
+    endDate: campaignEndDate,
+    defaultAppointmentDuration,
+  } = campaign;
 
   const { vendors, buyers } = useContext(AgendaContextData);
 
-  const { title, start, duration, vendorId, buyerId } = appointment;
+  const {
+    title,
+    start,
+    duration,
+    vendorId,
+    buyerId,
+    _id: appointmentId,
+  } = appointment;
 
-  const handleDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [excludedMeetingIntervals, setExcludedMeetingIntervals] = useState<
+    { start: Date; end: Date }[]
+  >([]);
+
+  useEffect(() => {
+    if (vendorId) {
+      const vendorAppointments = appointments.filter(
+        ({ vendorId: appointmentVendorId }) => vendorId === appointmentVendorId
+      );
+
+      const datesUnavailable = vendorAppointments.map(appointment => {
+        const { start, end } = appointment;
+
+        return { start, end };
+      });
+
+      setExcludedMeetingIntervals(datesUnavailable);
+    }
+  }, [vendorId]);
+
+  const handleDurationChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
     const { value } = e.target;
 
     const numValue = Number(value);
 
     // @ts-ignore
     const fakeEventObj = {
-      target: { value: numValue * 60000, name: "duration" },
+      target: { value: numValue, name: "duration" },
     } as React.ChangeEvent<HTMLInputElement>;
 
     onInputChange(fakeEventObj);
@@ -51,7 +89,7 @@ const AppointmentModal = ({
 
       return { name: `${name} - ${companyName}`, value: _id };
     });
-  }, []);
+  }, [buyers]);
 
   const handleStartDateChange = (date: Date): void => {
     // @ts-ignore
@@ -62,7 +100,7 @@ const AppointmentModal = ({
     onInputChange(fakeEventObj);
   };
 
-  const handleVendorSelect = (vendorId: string) => {
+  const handleVendorSelect = (vendorId: string): void => {
     // @ts-ignore
     const fakeEventObj = {
       target: { value: vendorId, name: "vendorId" },
@@ -71,13 +109,43 @@ const AppointmentModal = ({
     onInputChange(fakeEventObj);
   };
 
-  const handleBuyerSelect = (buyerId: string) => {
+  const handleBuyerSelect = (buyerId: string): void => {
     // @ts-ignore
     const fakeEventObj = {
       target: { value: buyerId, name: "buyerId" },
     } as React.ChangeEvent<HTMLInputElement>;
 
     onInputChange(fakeEventObj);
+  };
+
+  const handleSave = (e: React.FormEvent<HTMLFormElement>): void => {
+    e.preventDefault();
+
+    const isVendorAvailable = checkVendorAvailable(
+      appointment,
+      excludedMeetingIntervals
+    );
+
+    const areAllInputsFilled = areAppointmentInputsComplete(appointment);
+
+    if (!isVendorAvailable || !areAllInputsFilled) return;
+
+    saveAppointment();
+    onClose();
+  };
+
+  const handleAddNewBuyer = (buyer: Buyer): void => {
+    const { _id } = buyer;
+
+    addBuyer(buyer);
+    handleBuyerSelect(_id);
+  };
+
+  const handleDeleteAppointment = () => {
+    if (!deleteAppointment || !appointmentId) return;
+
+    deleteAppointment(appointmentId);
+    onClose();
   };
 
   return (
@@ -88,15 +156,10 @@ const AppointmentModal = ({
           onSubmit={handleSave}
           className="flex flex-col w-8/12 h-full mx-auto my-8"
         >
-          <div className="flex flex-col my-4">
-            <label
-              htmlFor="appointmentTitle"
-              className="text-lg font-semibold text-black"
-            >
-              Title:
-            </label>
-            <Input
-              id="appointmentTitle"
+          <div className="w-full my-4">
+            <InputGroup
+              labelName="appointmentTitle"
+              label="Title:"
               name="title"
               value={title}
               type="text"
@@ -105,7 +168,7 @@ const AppointmentModal = ({
             />
           </div>
           <div className="flex flex-row justify-between items-center h-20 my-4">
-            <div className="w-5/12">
+            <div className="w-5/12 z-20">
               <label
                 htmlFor="appointmentStart"
                 className="text-lg font-semibold text-black"
@@ -118,27 +181,25 @@ const AppointmentModal = ({
                 selected={start}
                 onChange={handleStartDateChange}
                 includeDateIntervals={[
-                  { start: new Date(), end: new Date("2022-10-01") },
+                  {
+                    start: new Date(campaignStartDate),
+                    end: new Date(campaignEndDate),
+                  },
                 ]}
-                className="p-2 border-grey-300 border-2 h-14 rounded-md"
+                className="p-2 border-grey-300 border-2 h-14 rounded-md w-full"
                 showTimeSelect
                 dateFormat="MMMM d, yyyy h:mm aa"
               />
             </div>
-            <div className="h-full">
-              <label
-                htmlFor="appointmentDuration"
-                className="text-lg font-semibold text-black"
-              >
-                Duration:
-              </label>
-              <Input
-                id="appointmentDuration"
+            <div className="w-5/12 h-full">
+              <InputGroup
+                labelName="appointmentDuration"
+                label="Duration (minutes):"
                 name="title"
-                value={duration / 60000}
+                value={duration}
                 type="number"
-                step={1}
-                min={1}
+                step={defaultAppointmentDuration}
+                min={defaultAppointmentDuration}
                 onChange={handleDurationChange}
               />
             </div>
@@ -173,9 +234,20 @@ const AppointmentModal = ({
               />
             </div>
           </div>
+          <AddNewBuyerInputs onAddNewBuyer={handleAddNewBuyer} />
           <div className="flex justify-between mt-auto mx-auto w-8/12 h-12">
-            <Button onClick={onClose}>Cancel</Button>
-            <Button type="submit">Save</Button>
+            <Button
+              type="button"
+              buttonType="danger"
+              onClick={handleDeleteAppointment}
+              customStyle="w-24"
+              disabled={!appointmentId}
+            >
+              Delete
+            </Button>
+            <Button type="submit" customStyle="w-24">
+              Save
+            </Button>
           </div>
         </form>
       </div>
@@ -185,11 +257,14 @@ const AppointmentModal = ({
 
 type AppointmentModalProps = {
   appointment: AppointmentInputs;
+  appointments: AppointmentInputs[];
   isOpen: boolean;
-  campaignTitle: string;
+  campaign: Campaign;
   onClose: () => void;
   saveAppointment: () => void;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  addBuyer: (buyer: Buyer) => void;
+  deleteAppointment?: (appointmentId: string) => void;
 };
 
 export default AppointmentModal;

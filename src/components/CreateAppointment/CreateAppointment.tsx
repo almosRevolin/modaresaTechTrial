@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { AppointmentModal, Button } from "../index";
+import { AgendaContextData } from "../../contexts/AgendaContext";
+import { generateRandomId } from "../../utils/utils";
 
 const CreateAppointment = ({
-  campaign,
   createAppointment,
+  appointments,
 }: CreateAppointmentProps) => {
-  const { _id, defaultAppointmentDuration, title } = campaign;
+  const { campaign, addBuyer } = useContext(AgendaContextData);
+  const { _id, defaultAppointmentDuration } = campaign;
 
   const baseInputs = {
     title: "",
@@ -19,7 +22,8 @@ const CreateAppointment = ({
   const [appointment, setAppointment] = useState<AppointmentInputs>(baseInputs);
 
   const handleSaveNewAppointment = () => {
-    createAppointment(appointment);
+    const appointmentWithId = { ...appointment, _id: generateRandomId() };
+    createAppointment(appointmentWithId);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,12 +48,14 @@ const CreateAppointment = ({
       </div>
       {isCreateModalOpen && (
         <AppointmentModal
+          appointments={appointments}
+          campaign={campaign}
           isOpen={isCreateModalOpen}
           onClose={handleCloseModal}
           appointment={appointment}
           saveAppointment={handleSaveNewAppointment}
           onInputChange={handleInputChange}
-          campaignTitle={title}
+          addBuyer={addBuyer}
         />
       )}
     </>
@@ -57,7 +63,7 @@ const CreateAppointment = ({
 };
 
 type CreateAppointmentProps = {
-  campaign: Campaign;
+  appointments: AppointmentInputs[];
   createAppointment: (appointment: AppointmentInputs) => void;
 };
 

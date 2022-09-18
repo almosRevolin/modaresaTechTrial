@@ -1,1 +1,1 @@
-export { default as LandingPage } from "./LandingPage/LandingPage";
+export { default as AgendaPage } from "./AgendaPage/AgendaPage";

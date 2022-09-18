@@ -5,8 +5,8 @@ const campaigns: Campaign[] = [
     _id: v4(),
     title: "My very first campaign",
     startDate: new Date().getTime(),
-    endDate: new Date().getTime(),
-    defaultAppointmentDuration: 3600000,
+    endDate: new Date(Date.now() + 12096e5).getTime(),
+    defaultAppointmentDuration: 60,
   },
 ];
 

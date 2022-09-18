@@ -8,7 +8,7 @@ const Select = ({
   onSelect,
   placeholder,
 }: SelectProps) => {
-  const [selectedOption, setSelectedOption] = useState<Option>(null);
+  const [selectedOption, setSelectedOption] = useState<Option | null>(null);
 
   useEffect(() => {
     if (selectedValue) {
@@ -46,20 +46,17 @@ const Select = ({
 
                   return (
                     <Listbox.Option value={value} key={`${value}$-${i}`}>
-                      {({ active, selected }) => {
-                        if (selected) return null;
-
-                        return (
-                          <div
-                            className={clsx(
-                              "flex items-center justify-center w-full h-14",
-                              active && "bg-gray-200"
-                            )}
-                          >
-                            {name}
-                          </div>
-                        );
-                      }}
+                      {({ active, selected }) => (
+                        <div
+                          className={clsx(
+                            "flex items-center justify-center w-full h-14",
+                            active && "bg-gray-200",
+                            selected && "hidden"
+                          )}
+                        >
+                          {name}
+                        </div>
+                      )}
                     </Listbox.Option>
                   );
                 })}
